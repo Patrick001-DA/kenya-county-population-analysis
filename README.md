@@ -13,4 +13,7 @@ This is a work in progress and I'd welcome feedback.
 
 GitHub: https://github.com/Patrick001-DA/kenya-county-population-analysis
 
+## Data source
+Kenya National Bureau of Statistics (KNBS). 2019 Kenya Population and Housing
+Census, Volume I: Distribution of Population by Sex and County.
 #DataAnalysis #Python #SQL #pandas #Kenya #Census
