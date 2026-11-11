@@ -142,6 +142,82 @@ SELECT CASE WHEN male > female THEN 'More males'
  SUM(total) AS population;
 """
 print(pd.read_sql(counties ,conn))
+
+
+#Split counties into four population-size quartiles. How do counties, smallest,largest and total population differ by quartile?
+
+quartiles="""
+WITH q AS
+(SELECT county,total,
+NTILE(4) OVER (ORDER BY total DESC) AS size_quartiles
+FROM county_population)
+SELECT size_quartiles,
+SUM(total)AS quartiles_population,
+MIN(total) AS smallest,
+MAX(total) AS largest,
+COUNT(*)AS no_counties
+FROM q
+GROUP BY size_quartiles
+ORDER BY size_quartiles;
+
+
+"""
+print(pd.read_sql(quartiles,conn))
+
+
+#Which counties have a population above the national county average?
+above_avg="""
+SELECT county,total
+FROM county_population
+WHERE  total> (
+SELECT AVG(total) AS avg_total
+FROM county_population)
+ORDER BY total DESC;
+"""
+print(pd.read_sql(above_avg,conn))
+
+
+#Which 10 counties deviate most from the national sex ratio (males per 100 females)?
+
+query="""WITH national AS (
+SELECT  sum(male)/sum(female)*100 AS national_ratio
+FROM county_population
+
+)
+SELECT c.county,
+ROUND(100*c.male/c.female,1),
+ROUND(national.national_ratio,1),
+ROUND(100*c.male/c.female-national.national_ratio,1) AS gap
+FROM county_population as c
+CROSS JOIN national
+ORDER BY ABS(100*c.male/c.female-national.national_ratio)DESC
+LIMIT 10;
+"""
+print(pd.read_sql(query,conn))
+
+#Which counties have the most intersex persons per 100,000 residents?(Interpret with caution: counts are small.)
+
+query="""
+SELECT county,intersex,total,ROUND(100000*intersex/total,1) AS intersex_per_100k
+FROM county_population
+WHERE intersex>0
+ORDER BY  intersex_per_100k DESC
+LIMIT 10;
+"""
+print(pd.read_sql(query,conn))
+
+#Compare each county's population rank with its female-share rank. Where is the largest gap?
+qry="""
+SELECT county,total,
+RANK() OVER (ORDER BY total DESC) AS pop_rank,
+RANK() OVER (ORDER BY 1*female/total DESC ) AS female_share_rank,
+RANK() OVER (ORDER BY total DESC) -RANK () OVER (ORDER BY 1*female/total DESC) AS rank_gap
+FROM county_population
+ORDER BY ABS(rank_gap)DESC;
+"""
+print(pd.read_sql(qry,conn))
+
+
 conn.close()
 
 
